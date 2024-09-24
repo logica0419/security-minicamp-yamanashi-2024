@@ -1,0 +1,118 @@
+- name: Wait for SSH connection
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH connection
+      ansible.builtin.wait_for_connection:
+        delay: 5
+        timeout: 300
+
+- name: Client Setup
+  hosts: client
+  become: true
+  tasks:
+    - name: Add user
+      ansible.builtin.user:
+        name: user
+        password: "{{ password | password_hash('sha512') }}"
+        shell: /bin/bash
+        state: present
+
+    - name: Update and Upgrade
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: "dist"
+
+    - name: Check if a reboot is needed
+      register: reboot_required_file
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+        get_checksum: false
+
+    - name: Reboot if kernel was updated
+      ansible.builtin.reboot:
+        msg: "Reboot initiated by Ansible for kernel updates"
+        connect_timeout: 5
+        reboot_timeout: 300
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+        test_command: uptime
+      when: reboot_required_file.stat.exists
+
+- name: Server Setup
+  hosts: server
+  become: true
+  tasks:
+    - name: Update and Upgrade
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: "dist"
+
+    - name: Check if a reboot is needed
+      register: reboot_required_file
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+        get_checksum: false
+
+    - name: Reboot if kernel was updated
+      ansible.builtin.reboot:
+        msg: "Reboot initiated by Ansible for kernel updates"
+        connect_timeout: 5
+        reboot_timeout: 300
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+        test_command: uptime
+      when: reboot_required_file.stat.exists
+
+    - name: Setup kernel module settings
+      ansible.builtin.copy:
+        content: |
+          overlay
+          br_netfilter
+        dest: /etc/modules-load.d/k8s.conf
+        mode: "0644"
+
+    - name: Load kernel modules
+      community.general.modprobe:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - overlay
+        - br_netfilter
+
+    - name: Set kernel params
+      ansible.posix.sysctl:
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        sysctl_set: true
+        state: present
+        reload: true
+        ignoreerrors: true
+      with_dict:
+        net.ipv4.ip_forward: 1
+        net.bridge.bridge-nf-call-iptables: 1
+        net.bridge.bridge-nf-call-ip6tables: 1
+
+    - name: Add gpg key
+      ansible.builtin.apt_key:
+        url: https://download.docker.com/linux/debian/gpg
+
+    - name: Add Docker apt repository
+      ansible.builtin.apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu jammy stable
+
+    - name: Update apt repository
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install containerd
+      ansible.builtin.apt:
+        name: "{{ packages }}"
+        state: present
+      vars:
+        packages:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
