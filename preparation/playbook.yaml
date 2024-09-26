@@ -18,6 +18,13 @@
         shell: /bin/bash
         state: present
 
+    - name: Link .bash_history to /dev/null to disable logging
+      ansible.builtin.file:
+        src: /dev/null
+        dest: "/home/user/.bash_history"
+        state: link
+        force: true
+
     - name: Update and Upgrade
       ansible.builtin.apt:
         update_cache: true

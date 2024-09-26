@@ -1,4 +1,6 @@
-# 危険なメールが送れるような環境の構築
+# 手書きSMTPが送れる環境の構築
+
+実際は、受講者全員の環境差異を無くすための措置でしかなくなってしまった
 
 ## 構築方法
 
@@ -37,4 +39,12 @@
 
     ```bash
     sh run.sh
+    ```
+
+5. userユーザーにのみ、パスワードによるSSHログインを許可
+   - `/etc/ssh/sshd_config`の末尾に以下の設定を追加
+
+    ```conf
+    Match User user
+      PasswordAuthentication yes
     ```
