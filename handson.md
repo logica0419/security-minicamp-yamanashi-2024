@@ -96,7 +96,7 @@ telnetは今回のように、任意のアドレス・ポートに対してTCP�
   - まずは自己紹介をします。以下の文字列を入力して下さい。
 
   ```bash
-  EHLO yamanashi2024
+  HELO yamanashi2024
   ```
 
   - `250 2.0.0 Hello yamanashi2024`と出れば成功です！
