@@ -9,8 +9,7 @@
   - Brevoにログインし、以下の2ページを開いておいてください。
   - <https://app.brevo.com/settings/keys/smtp>
   - <https://app-smtp.brevo.com/real-time>
-- ハンズオン用マシンに接続する (受講生限定)
-  - Kintoneで案内した事前準備の通り、ハンズオン用マシンにSSHを使って接続してください。
+- telnetの使えるコマンドラインツールを開く
 
 ## 正常なメールを送ってみよう
 
